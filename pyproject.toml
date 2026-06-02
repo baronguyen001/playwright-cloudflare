@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "playwright-cloudflare"
+version = "0.1.0"
+description = "Playwright stealth defaults for authorized Cloudflare testing."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "barobaonguyen" }]
+keywords = ["playwright", "cloudflare", "stealth", "browser-automation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Internet :: WWW/HTTP :: Browsers",
+]
+dependencies = ["playwright>=1.40"]
+
+[project.optional-dependencies]
+dev = ["build", "pytest", "ruff"]
+
+[project.urls]
+Homepage = "https://github.com/barobaonguyen/playwright-cloudflare"
+Repository = "https://github.com/barobaonguyen/playwright-cloudflare"
+Issues = "https://github.com/barobaonguyen/playwright-cloudflare/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pw_stealth"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["browser: requires a local Playwright browser install"]

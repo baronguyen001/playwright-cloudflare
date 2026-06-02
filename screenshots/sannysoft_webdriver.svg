@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360">
+  <rect width="960" height="360" fill="#fbfbfb"/>
+  <text x="44" y="58" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">bot.sannysoft.com smoke check</text>
+  <rect x="70" y="110" width="820" height="174" rx="8" fill="#fff" stroke="#d1d5db"/>
+  <text x="110" y="160" font-family="Arial, sans-serif" font-size="20" fill="#111827">WebDriver</text>
+  <rect x="690" y="134" width="136" height="42" rx="21" fill="#16a34a"/>
+  <text x="758" y="162" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#fff">missing</text>
+  <text x="110" y="222" font-family="Arial, sans-serif" font-size="20" fill="#111827">Chrome runtime</text>
+  <rect x="690" y="196" width="136" height="42" rx="21" fill="#16a34a"/>
+  <text x="758" y="224" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" fill="#fff">patched</text>
+  <text x="44" y="324" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">Illustrative local screenshot target; run examples/basic_stealth.py to generate a fresh PNG.</text>
+</svg>
