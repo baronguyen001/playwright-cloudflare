@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "playwright-cloudflare"
-version = "0.1.0"
+version = "0.2.0"
 description = "Playwright stealth defaults for authorized Cloudflare testing."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,6 +21,9 @@ classifiers = [
   "Topic :: Internet :: WWW/HTTP :: Browsers",
 ]
 dependencies = ["playwright>=1.40"]
+
+[project.scripts]
+pw-stealth = "pw_stealth.cli:main"
 
 [project.optional-dependencies]
 dev = ["build", "pytest", "ruff"]

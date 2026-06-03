@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path, PureWindowsPath
-from typing import TYPE_CHECKING
 
-from .fingerprint import Fingerprint, random_fingerprint
-
-if TYPE_CHECKING:
-    pass
-
+from .fingerprint import (
+    Fingerprint,
+    FingerprintProfile,
+    fingerprint_context_options,
+    fingerprint_init_script,
+    random_fingerprint,
+)
 
 STEALTH_ARGS: list[str] = [
     "--disable-blink-features=AutomationControlled",
@@ -21,17 +22,40 @@ STEALTH_ARGS: list[str] = [
 ]
 
 STEALTH_INIT_JS: str = """
-Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-window.chrome = window.chrome || { runtime: {} };
-Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-const originalQuery = window.navigator.permissions.query;
-window.navigator.permissions.query = (parameters) => (
-  parameters.name === 'notifications'
-    ? Promise.resolve({ state: Notification.permission })
-    : originalQuery(parameters)
-);
+(() => {
+  const defineNavigatorGetter = (name, value) => {
+    const readValue = () => Array.isArray(value) ? value.slice() : value;
+    const descriptor = { get: readValue, configurable: true };
+    try {
+      Object.defineProperty(Navigator.prototype, name, descriptor);
+    } catch (_) {
+      try {
+        Object.defineProperty(navigator, name, descriptor);
+      } catch (_) {}
+    }
+  };
+
+  defineNavigatorGetter("webdriver", undefined);
+  defineNavigatorGetter("plugins", [1, 2, 3, 4, 5]);
+  defineNavigatorGetter("language", "en-US");
+  defineNavigatorGetter("languages", ["en-US", "en"]);
+  window.chrome = window.chrome || {};
+  window.chrome.runtime = window.chrome.runtime || {};
+
+  if (window.navigator.permissions && window.navigator.permissions.query) {
+    const originalQuery = window.navigator.permissions.query.bind(
+      window.navigator.permissions
+    );
+    window.navigator.permissions.query = (parameters) => (
+      parameters && parameters.name === "notifications"
+        ? Promise.resolve({ state: Notification.permission })
+        : originalQuery(parameters)
+    );
+  }
+})();
 """
+
+BrowserFingerprint = Fingerprint | FingerprintProfile
 
 
 def _merge_args(extra_args: list[str] | None = None, *, headless: bool = False) -> list[str]:
@@ -76,15 +100,22 @@ def _resolve_chrome_profile(user_data_dir: str) -> tuple[str, list[str], str | N
     return launch_dir, launch_args, channel
 
 
-def _context_options(fingerprint: Fingerprint | None, proxy: str | None) -> dict:
-    fp = fingerprint or random_fingerprint()
-    return {
-        "user_agent": fp.user_agent,
-        "viewport": dict(fp.viewport),
-        "locale": fp.locale,
-        "timezone_id": fp.timezone_id,
-        "proxy": _proxy(proxy),
-    }
+def _resolve_fingerprint(fingerprint: BrowserFingerprint | None) -> BrowserFingerprint:
+    return fingerprint or random_fingerprint()
+
+
+def _context_options(fingerprint: BrowserFingerprint | None, proxy: str | None = None) -> dict:
+    options = fingerprint_context_options(fingerprint)
+    if proxy:
+        options["proxy"] = _proxy(proxy)
+    return options
+
+
+def _stealth_init_script(fingerprint: BrowserFingerprint | None = None) -> str:
+    profile_script = fingerprint_init_script(fingerprint)
+    if not profile_script:
+        return STEALTH_INIT_JS
+    return f"{STEALTH_INIT_JS}\n{profile_script}"
 
 
 def stealth_browser(
@@ -111,12 +142,13 @@ def stealth_context(
     user_data_dir: str | None = None,
     headless: bool = False,
     proxy: str | None = None,
-    fingerprint: Fingerprint | None = None,
+    fingerprint: BrowserFingerprint | None = None,
     channel: str | None = None,
 ):
     """Return a BrowserContext with fingerprint options and stealth init script applied."""
 
-    options = _context_options(fingerprint, proxy)
+    resolved_fingerprint = _resolve_fingerprint(fingerprint)
+    options = _context_options(resolved_fingerprint, proxy if user_data_dir else None)
     if user_data_dir:
         launch_dir, profile_args, profile_channel = _resolve_chrome_profile(user_data_dir)
         context = playwright.chromium.launch_persistent_context(
@@ -128,17 +160,16 @@ def stealth_context(
         )
     else:
         browser = stealth_browser(playwright, headless=headless, proxy=proxy, channel=channel)
-        context = browser.new_context(
-            user_agent=options["user_agent"],
-            viewport=options["viewport"],
-            locale=options["locale"],
-            timezone_id=options["timezone_id"],
-        )
-    apply_stealth(context)
+        context = browser.new_context(**options)
+    apply_stealth(context, fingerprint=resolved_fingerprint)
     return context
 
 
-def apply_stealth(context_or_page) -> None:
+def apply_stealth(
+    context_or_page,
+    *,
+    fingerprint: BrowserFingerprint | None = None,
+) -> None:
     """Install STEALTH_INIT_JS on a BrowserContext or Page before site scripts run."""
 
-    context_or_page.add_init_script(STEALTH_INIT_JS)
+    context_or_page.add_init_script(_stealth_init_script(fingerprint))
