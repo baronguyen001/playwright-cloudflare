@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 - 2026-06-10
+
+- Added `pw_stealth.presets` with internally-consistent `chrome`, `edge`, `brave`, and `firefox` fingerprint presets; exposed `load_preset`, `preset_names`, `preset_engine`, and `is_internally_consistent`.
+- Extended the CLI: `pw-stealth profiles` lists presets, `pw-stealth check --preset <name>` applies one before checking, and `pw-stealth check --creepjs` opens a CreepJS-style detection page and reports parsed trust/lie signals.
+- Added `tests/test_presets.py` (per-preset internal-consistency) and a fully mocked `tests/test_cli.py` smoke suite that launches no live browser.
+- Added `examples/preset_example.py` using `example.com`/CreepJS only.
+- Kept the no-extra-stealth-dependency design (Playwright remains the only runtime dependency).
+
 ## 0.2.0 - 2026-06-03
 
 - Added explicit Playwright sync-API helpers in `pw_stealth.sync_stealth`, including `apply_stealth_sync`.

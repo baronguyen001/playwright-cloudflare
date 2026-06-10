@@ -10,6 +10,12 @@ from .fingerprint import (
     fingerprint_init_script,
     random_fingerprint,
 )
+from .presets import (
+    is_internally_consistent,
+    load_preset,
+    preset_engine,
+    preset_names,
+)
 from .stealth import (
     STEALTH_ARGS,
     STEALTH_INIT_JS,
@@ -19,7 +25,7 @@ from .stealth import (
 )
 from .sync_stealth import apply_stealth_sync, stealth_browser_sync, stealth_context_sync
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Fingerprint",
@@ -34,6 +40,10 @@ __all__ = [
     "apply_stealth_sync",
     "fingerprint_context_options",
     "fingerprint_init_script",
+    "is_internally_consistent",
+    "load_preset",
+    "preset_engine",
+    "preset_names",
     "random_fingerprint",
     "stealth_browser",
     "stealth_browser_sync",

@@ -81,6 +81,30 @@ context = stealth_context_sync(p, fingerprint=profile, headless=True)
 | WebGL identity | `webgl_vendor`, `webgl_renderer` | WebGL `getParameter` patch |
 | Canvas readout noise | `canvas_noise` | Canvas read APIs |
 
+## Presets
+
+`load_preset(name)` returns a ready-made, internally-consistent `FingerprintProfile`. Each
+preset bundles the fingerprint vectors so they do not contradict each other — for example a
+Chromium user agent always ships with a Google/ANGLE WebGL identity, while the Firefox
+preset pairs a Gecko user agent with a `Mozilla` WebGL vendor.
+
+```python
+from pw_stealth import load_preset, stealth_context_sync
+
+profile = load_preset("chrome")          # chrome | edge | brave | firefox
+context = stealth_context_sync(p, fingerprint=profile, headless=True)
+```
+
+| Preset | Engine | User agent token | WebGL vendor | Locale / timezone |
+| --- | --- | --- | --- | --- |
+| `chrome` | chromium | `Chrome/125` | `Google Inc. (Intel)` | `en-US` / America/New_York |
+| `edge` | chromium | `Edg/125` | `Google Inc. (NVIDIA)` | `en-US` / America/Chicago |
+| `brave` | chromium | `Chrome/125` | `Google Inc.` | `en-US` / America/Los_Angeles |
+| `firefox` | gecko | `Firefox/126` | `Mozilla` | `en-GB` / Europe/London |
+
+`is_internally_consistent(name)` returns `True` when a preset's user agent, WebGL vendor,
+engine, and locale/languages all agree — the same contract the presets are tested against.
+
 ## CLI
 
 `pw-stealth check <url>` opens an authorized test page with stealth on and prints detection
@@ -91,6 +115,22 @@ pw-stealth check https://example.com
 pw-stealth check https://bot.sannysoft.com --no-headless --json
 ```
 
+`pw-stealth profiles` lists the available fingerprint presets, and `--preset <name>` applies
+one before checking:
+
+```bash
+pw-stealth profiles
+pw-stealth check https://bot.sannysoft.com --preset firefox
+```
+
+`pw-stealth check --creepjs` opens a CreepJS-style detection page and reports the parsed
+trust score and lie signals:
+
+```bash
+pw-stealth check --creepjs
+pw-stealth check --creepjs --preset chrome --json
+```
+
 ## Included
 
 - `STEALTH_ARGS` without `--enable-automation`
@@ -98,6 +138,8 @@ pw-stealth check https://bot.sannysoft.com --no-headless --json
 - Random desktop `Fingerprint` values for user agent, viewport, locale, and timezone
 - Explicit sync helpers in `pw_stealth.sync_stealth`
 - Opt-in `FingerprintProfile` vectors for WebGL, canvas, locale, timezone, CPU, and memory
+- Internally-consistent `chrome` / `edge` / `brave` / `firefox` presets via `load_preset`
+- `pw-stealth profiles`, `--preset <name>`, and a `--creepjs` trust/lie diagnostics check
 - Persistent Chrome profile support with `--profile-directory=...`
 
 ## Not Included
