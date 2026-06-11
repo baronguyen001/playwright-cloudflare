@@ -1,5 +1,12 @@
 """Playwright stealth defaults for authorized testing."""
 
+from .audit import (
+    build_audit_report,
+    collect_audit_signals,
+    compare_reports,
+    run_audit_sync,
+    write_report,
+)
 from .fingerprint import (
     STEALTH_FINGERPRINT,
     UA_POOL,
@@ -25,7 +32,7 @@ from .stealth import (
 )
 from .sync_stealth import apply_stealth_sync, stealth_browser_sync, stealth_context_sync
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "Fingerprint",
@@ -38,6 +45,9 @@ __all__ = [
     "__version__",
     "apply_stealth",
     "apply_stealth_sync",
+    "build_audit_report",
+    "collect_audit_signals",
+    "compare_reports",
     "fingerprint_context_options",
     "fingerprint_init_script",
     "is_internally_consistent",
@@ -45,8 +55,10 @@ __all__ = [
     "preset_engine",
     "preset_names",
     "random_fingerprint",
+    "run_audit_sync",
     "stealth_browser",
     "stealth_browser_sync",
     "stealth_context",
     "stealth_context_sync",
+    "write_report",
 ]

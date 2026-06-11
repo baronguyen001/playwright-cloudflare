@@ -9,10 +9,17 @@ from typing import Any
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
+from .audit import (
+    CREEPJS_SCRAPE_SCRIPT,
+    CREEPJS_URL,
+    compare_reports,
+    format_diffs,
+    read_report,
+    run_audit_sync,
+    write_report,
+)
 from .presets import load_preset, preset_engine, preset_names
 from .sync_stealth import stealth_context_sync
-
-CREEPJS_URL = "https://abrahamjuliot.github.io/creepjs/"
 
 CHECK_SCRIPT = """
 () => {
@@ -46,28 +53,6 @@ CHECK_SCRIPT = """
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     webglVendor: webgl.vendor,
     webglRenderer: webgl.renderer
-  };
-}
-"""
-
-# Reads the trust score and lie signals that the CreepJS detection page renders into the
-# DOM. CreepJS exposes these as text nodes (the "trust score" percentage and a "lies"
-# count), so we scrape the rendered values rather than hooking its internals.
-CREEPJS_SCRAPE_SCRIPT = r"""
-() => {
-  const text = (document.body && document.body.innerText) || "";
-  const pick = (regex) => {
-    const match = text.match(regex);
-    return match ? match[1].trim() : null;
-  };
-  return {
-    url: location.href,
-    title: document.title,
-    trust: pick(/trust score[^0-9]*([0-9.]+\s*%[^\n]*)/i),
-    lies: pick(/(\d+)\s+lies?\b/i),
-    fingerprintId: pick(/\bvisitor[^0-9a-z]*([0-9a-z]{6,})/i),
-    bot: pick(/\bbot\b[^\n:]*:?\s*([^\n]+)/i),
-    rawLength: text.length
   };
 }
 """
@@ -163,6 +148,36 @@ def check_url(args: argparse.Namespace) -> int:
     return 0
 
 
+def audit_url(args: argparse.Namespace) -> int:
+    try:
+        report = run_audit_sync(
+            args.url,
+            preset=args.preset,
+            creepjs=args.creepjs,
+            headless=args.headless,
+            timeout=args.timeout,
+        )
+    except PlaywrightTimeoutError as exc:
+        print(f"Timed out loading {args.url}: {exc}")
+        return 2
+
+    if args.json_path:
+        write_report(report, args.json_path)
+        print(f"Wrote audit report: {args.json_path}")
+    else:
+        print(json.dumps(report, indent=2, sort_keys=True))
+
+    if args.compare:
+        baseline = read_report(args.compare)
+        diffs = compare_reports(report, baseline)
+        if diffs:
+            print("Audit regression detected:")
+            print(format_diffs(diffs))
+            return 1
+        print("Audit matches baseline.")
+    return 0
+
+
 def list_profiles(args: argparse.Namespace) -> int:
     names = preset_names()
     if args.json:
@@ -214,6 +229,47 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check.add_argument("--json", action="store_true", help="Print raw JSON signals.")
     check.set_defaults(func=check_url)
+
+    audit = subparsers.add_parser(
+        "audit",
+        help="Write a machine-readable stealth audit report for CI regression checks.",
+    )
+    audit.add_argument("url", help="Authorized test URL to open.")
+    audit.add_argument(
+        "--json",
+        dest="json_path",
+        default=None,
+        help="Write the audit report to this JSON path. Defaults to stdout.",
+    )
+    audit.add_argument(
+        "--compare",
+        default=None,
+        help="Compare against a saved baseline report and exit 1 when signals differ.",
+    )
+    audit.add_argument(
+        "--creepjs",
+        action="store_true",
+        help="Also parse CreepJS-style trust/lie signals from the target page.",
+    )
+    audit.add_argument(
+        "--preset",
+        choices=preset_names(),
+        default=None,
+        help="Apply a named fingerprint preset before auditing.",
+    )
+    audit.add_argument(
+        "--headless",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Run Chromium headless. Defaults to true.",
+    )
+    audit.add_argument(
+        "--timeout",
+        type=int,
+        default=30_000,
+        help="Navigation timeout in milliseconds.",
+    )
+    audit.set_defaults(func=audit_url)
 
     profiles = subparsers.add_parser("profiles", help="List available fingerprint presets.")
     profiles.add_argument("--json", action="store_true", help="Print presets as JSON.")

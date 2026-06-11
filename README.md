@@ -2,7 +2,8 @@
 
 Playwright stealth defaults for authorized browser testing: launch args,
 `add_init_script` patches, persistent Chrome profiles, explicit sync helpers, and
-opt-in fingerprint profile controls.
+opt-in fingerprint profile controls, machine-readable audit reports, and pytest fixtures
+for your own Playwright test suite.
 
 ![Sannysoft webdriver check](screenshots/sannysoft_webdriver.svg)
 
@@ -20,6 +21,12 @@ playwright install chromium
 
 The package keeps the no-extra-stealth-dependency design: Playwright is the only runtime
 dependency.
+
+For pytest integration:
+
+```bash
+pip install "playwright-cloudflare[test]"
+```
 
 ## Sync Usage
 
@@ -131,6 +138,36 @@ pw-stealth check --creepjs
 pw-stealth check --creepjs --preset chrome --json
 ```
 
+`pw-stealth audit <url>` writes a machine-readable report that is suitable for CI
+regression checks of your own stealth setup. It captures the same defensive diagnostic
+surfaces as the human check command, including `navigator.webdriver`, plugins, languages,
+hardware concurrency, device memory, timezone, WebGL, and a small canvas readout hash.
+
+```bash
+pw-stealth audit https://example.com --preset chrome --json audit.json
+pw-stealth audit https://bot.sannysoft.com --preset chrome --json current.json --compare baseline.json
+pw-stealth audit https://abrahamjuliot.github.io/creepjs/ --creepjs --json creepjs-audit.json
+```
+
+When `--compare baseline.json` finds a changed signal, the command prints the diff and
+exits `1`, which lets CI catch regressions in your own Playwright configuration.
+
+## Pytest Fixtures
+
+Install the optional test extra to expose `stealth_context` and `stealth_page` through
+pytest's `pytest11` plugin entry point. The fixtures use the `browser` fixture from the
+Playwright pytest plugin, create a fresh context, and install this package's stealth init
+scripts before yielding.
+
+```python
+def test_authorized_diagnostic_page(stealth_page):
+    stealth_page.goto("https://example.com")
+    assert "Example" in stealth_page.title()
+```
+
+Override `stealth_fingerprint` in your suite when you want a specific
+`FingerprintProfile` or preset-backed profile.
+
 ## Included
 
 - `STEALTH_ARGS` without `--enable-automation`
@@ -140,6 +177,8 @@ pw-stealth check --creepjs --preset chrome --json
 - Opt-in `FingerprintProfile` vectors for WebGL, canvas, locale, timezone, CPU, and memory
 - Internally-consistent `chrome` / `edge` / `brave` / `firefox` presets via `load_preset`
 - `pw-stealth profiles`, `--preset <name>`, and a `--creepjs` trust/lie diagnostics check
+- `pw-stealth audit` JSON reports with baseline compare mode for CI regression checks
+- Optional pytest fixtures: `stealth_context`, `stealth_page`, and `stealth_fingerprint`
 - Persistent Chrome profile support with `--profile-directory=...`
 
 ## Not Included
@@ -148,4 +187,6 @@ No CAPTCHA solver, no proxy rotation, no credential workflows, and no per-platfo
 logic. For persistent session testing, use `channel="chrome"`, a real Chrome profile path,
 and `headless=True` to add `--headless=new`.
 
-Built by [barobaonguyen](https://github.com/barobaonguyen). Want the full **scrape -> AI -> alert** bot, not just this piece? → **[Trawlkit](https://github.com/barobaonguyen)** (one-time kit).
+Built by [baronguyen001](https://github.com/baronguyen001). Want the full
+**scrape -> AI -> alert** bot, not just this piece? -> **[Trawlkit](https://github.com/baronguyen001/Trawlkit)**
+(one-time kit).

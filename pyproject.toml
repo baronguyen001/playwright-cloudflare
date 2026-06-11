@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "playwright-cloudflare"
-version = "0.3.0"
+version = "0.4.0"
 description = "Playwright stealth defaults for authorized Cloudflare testing."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "barobaonguyen" }]
+authors = [{ name = "baronguyen001" }]
 keywords = ["playwright", "cloudflare", "stealth", "browser-automation"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -27,11 +27,15 @@ pw-stealth = "pw_stealth.cli:main"
 
 [project.optional-dependencies]
 dev = ["build", "pytest", "ruff"]
+test = ["pytest", "pytest-playwright"]
+
+[project.entry-points.pytest11]
+pw_stealth = "pw_stealth.pytest_plugin"
 
 [project.urls]
-Homepage = "https://github.com/barobaonguyen/playwright-cloudflare"
-Repository = "https://github.com/barobaonguyen/playwright-cloudflare"
-Issues = "https://github.com/barobaonguyen/playwright-cloudflare/issues"
+Homepage = "https://github.com/baronguyen001/playwright-cloudflare"
+Repository = "https://github.com/baronguyen001/playwright-cloudflare"
+Issues = "https://github.com/baronguyen001/playwright-cloudflare/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pw_stealth"]

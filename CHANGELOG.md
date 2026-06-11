@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 - 2026-06-11
+
+- Added `pw_stealth.audit` for machine-readable JSON reports that capture
+  `navigator`, plugin, WebGL, canvas, timezone, and optional CreepJS-style trust/lie
+  signals from authorized diagnostic pages.
+- Added `pw-stealth audit <url> --json out.json` plus `--compare baseline.json`; compare
+  mode prints signal diffs and exits non-zero when the current stealth setup differs from
+  a saved CI baseline.
+- Added `pw_stealth.pytest_plugin` with `stealth_context` and `stealth_page` fixtures,
+  exposed via a `pytest11` entry point and optional `[test]` extra.
+- Added mocked audit and fixture smoke tests plus `examples/audit_ci.py`.
+- Kept the no-extra-stealth-dependency design and the defensive/testing-only disclaimer.
+
 ## 0.3.0 - 2026-06-10
 
 - Added `pw_stealth.presets` with internally-consistent `chrome`, `edge`, `brave`, and `firefox` fingerprint presets; exposed `load_preset`, `preset_names`, `preset_engine`, and `is_internally_consistent`.
